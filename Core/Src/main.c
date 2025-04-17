@@ -98,7 +98,23 @@ int main(void)
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_StatusTypeDef i2c1_ready_hal_status;
+  for (uint8_t try_address = 0; try_address < 128; try_address++)
+  {
+    uint16_t shifted_try_address = try_address << 1;
+    // uint8_t try_address_info[sizeof(desc)+sizeof(try_address)+4];
+    // sprintf(try_address_info, "%s0x%x\r\n", desc, try_address << 1);
 
+    i2c1_ready_hal_status = HAL_I2C_IsDeviceReady(&hi2c1, shifted_try_address, 2, 100);
+    if (i2c1_ready_hal_status == HAL_OK)
+    {
+      printf("\r\n[I2C Ready] Success !!!!!!! >>> 0x%x\r\n", try_address << 1);
+    }
+    else
+    {
+      printf("0x%x ", try_address << 1);
+    }
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
