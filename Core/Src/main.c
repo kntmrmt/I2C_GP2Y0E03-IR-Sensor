@@ -124,7 +124,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint16_t adc_value;
+  uint32_t adc_value;
   HAL_StatusTypeDef hal_adc_status, hal_adc_pull_status;
   while (1)
   {
