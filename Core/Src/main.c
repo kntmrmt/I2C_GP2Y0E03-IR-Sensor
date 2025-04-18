@@ -119,12 +119,32 @@ int main(void)
       printf("0x%x ", try_address << 1);
     }
   }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint16_t adc_value;
+  HAL_StatusTypeDef hal_adc_status, hal_adc_pull_status;
   while (1)
   {
+    hal_adc_status = HAL_ADC_Start(&hadc1);
+    hal_adc_pull_status = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    if (hal_adc_status == HAL_OK && hal_adc_pull_status == HAL_OK)
+    {
+      adc_value = HAL_ADC_GetValue(&hadc1);
+      printf("[Vout(A) ADC_VALUE] %d\r\n", adc_value);
+      HAL_ADC_Stop(&hadc1);
+    }
+    else if (hal_adc_status != HAL_OK)
+    {
+      printf("[Vout(A) ADC_VALUE] HAL_ADC_Start is FAIL, HAL status: %d\r\n", hal_adc_status);
+    }
+    else // else if (hal_adc_pull_status != HAL_OK)
+    {
+      printf("[Vout(A) ADC_VALUE] HAL_ADC_PollForConversion is FAIL, HAL status: %d\r\n", hal_adc_pull_status);
+    }
+    HAL_Delay(500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
