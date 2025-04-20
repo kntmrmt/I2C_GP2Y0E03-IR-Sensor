@@ -31,7 +31,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SLAVE_ADDRESS_GP2Y0E03 0x80
+#define REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT 0x35
+#define REGISTER_ADDRESS_GP2Y0E03_DISTANCE1 0x5E
+#define REGISTER_ADDRESS_GP2Y0E03_DISTANCE2 0x5F
+#define REGISTER_SIZE 1
+#define BUFFER_SIZE_DISTANCE 1
+#define BUFFER_SIZE_SHIFT_BIT 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -125,15 +131,44 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   uint32_t adc_value;
+  uint8_t read_buffer_distance1;
+  uint8_t read_buffer_distance2;
+  uint8_t read_buffer_shift_bit;
+  int distance_result;
+  HAL_StatusTypeDef hal_i2c_read_shift_bit_status;
+  HAL_StatusTypeDef hal_i2c_read_distance1_status, hal_i2c_read_distance2_status;
   HAL_StatusTypeDef hal_adc_status, hal_adc_pull_status;
+
+  hal_i2c_read_shift_bit_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT,
+                                          REGISTER_SIZE, &read_buffer_shift_bit, BUFFER_SIZE_SHIFT_BIT, HAL_MAX_DELAY);
+
   while (1)
   {
+    // Get distance value from distance register by I2C
+    hal_i2c_read_distance1_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_DISTANCE1,
+                                          REGISTER_SIZE, &read_buffer_distance1, BUFFER_SIZE_DISTANCE, HAL_MAX_DELAY);
+    hal_i2c_read_distance2_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_DISTANCE2,
+                                          REGISTER_SIZE, &read_buffer_distance2, BUFFER_SIZE_DISTANCE, HAL_MAX_DELAY);
+
+    if (hal_i2c_read_shift_bit_status == HAL_OK && hal_i2c_read_distance1_status == HAL_OK && hal_i2c_read_distance2_status == HAL_OK)
+    {
+      distance_result = (read_buffer_distance1 * 16 + read_buffer_distance2) / 16 / 2 ^ read_buffer_shift_bit;
+      printf("[I2C distance_result] %d cm\r\n", distance_result);
+    }
+    else
+    {
+      printf("[Vout(A) distance_result] FAIL, shift_bit read status: %d, distance1 read status: %d, distance2 read status: %d\r\n",
+              hal_i2c_read_shift_bit_status, hal_i2c_read_distance1_status, hal_i2c_read_distance2_status);
+    }
+    printf("----------------------------------------\r\n");
+
+    // Get the value of Vout(A) modified for ADC
     hal_adc_status = HAL_ADC_Start(&hadc1);
     hal_adc_pull_status = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
     if (hal_adc_status == HAL_OK && hal_adc_pull_status == HAL_OK)
     {
       adc_value = HAL_ADC_GetValue(&hadc1);
-      printf("[Vout(A) ADC_VALUE] %d\r\n", adc_value);
+      printf("[Vout(A) ADC_VALUE] %ld mV\r\n", adc_value);
       HAL_ADC_Stop(&hadc1);
     }
     else if (hal_adc_status != HAL_OK)
@@ -144,6 +179,7 @@ int main(void)
     {
       printf("[Vout(A) ADC_VALUE] HAL_ADC_PollForConversion is FAIL, HAL status: %d\r\n", hal_adc_pull_status);
     }
+    printf("========================================\r\n");
     HAL_Delay(500);
     /* USER CODE END WHILE */
 
