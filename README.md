@@ -6,3 +6,5 @@
     - [Application note](https://akizukidenshi.com/goodsaffix/GP2Y0E02_an_20180829.pdf)
 - Demo
     - ![](./demo.gif)
+- Pin layout
+    - ![](./pin_layout.png)
