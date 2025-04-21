@@ -73,6 +73,49 @@ int __io_putchar(int ch) {
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
 }
+
+HAL_StatusTypeDef change_shift_bit(uint8_t *read_buffer_shift_bit, uint8_t *write_buffer_shift_bit)
+{
+  HAL_StatusTypeDef hal_i2c_read_shift_bit_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT,
+                                          REGISTER_SIZE, read_buffer_shift_bit, BUFFER_SIZE_SHIFT_BIT, HAL_MAX_DELAY);
+  if (hal_i2c_read_shift_bit_status == HAL_OK)
+  {
+    printf("[I2C Read] Success, shift bit: %d\r\n", *read_buffer_shift_bit);
+    if (*read_buffer_shift_bit == 0x01) *write_buffer_shift_bit = 0x02;
+    else *write_buffer_shift_bit = 0x01;
+  }
+  else
+  {
+    printf("[I2C Read] Fail, shift bit can't be read\r\n");
+    return HAL_ERROR;
+  }
+
+  HAL_StatusTypeDef hal_i2c_write_shift_bit_status = HAL_I2C_Mem_Write(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT,
+                                          REGISTER_SIZE, write_buffer_shift_bit, BUFFER_SIZE_SHIFT_BIT, HAL_MAX_DELAY);
+  if (hal_i2c_write_shift_bit_status == HAL_OK)
+  {
+    printf("[I2C Write] Success, shit bit is changed.\r\n");
+  }
+  else
+  {
+    printf("[I2C Write] Fail can't be changed.\r\n");
+    return HAL_ERROR;
+  }
+
+  hal_i2c_read_shift_bit_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT,
+                                          REGISTER_SIZE, read_buffer_shift_bit, BUFFER_SIZE_SHIFT_BIT, HAL_MAX_DELAY);
+  if (hal_i2c_read_shift_bit_status  == HAL_OK)
+  {
+    printf("[I2C Read] Success, shift bit: %d\r\n", *read_buffer_shift_bit);
+  }
+  else
+  {
+    printf("[I2C Read] Fail, shift bit can't be read\r\n");
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
+}
 /* USER CODE END 0 */
 
 /**
@@ -125,22 +168,19 @@ int main(void)
       printf("0x%x ", try_address << 1);
     }
   }
+  printf("\r\n");
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   uint32_t adc_value;
-  uint8_t read_buffer_distance1;
-  uint8_t read_buffer_distance2;
-  uint8_t read_buffer_shift_bit;
+  uint8_t read_buffer_distance1, read_buffer_distance2;
+  uint8_t read_buffer_shift_bit, write_buffer_shift_bit;
   int distance_result;
-  HAL_StatusTypeDef hal_i2c_read_shift_bit_status;
   HAL_StatusTypeDef hal_i2c_read_distance1_status, hal_i2c_read_distance2_status;
   HAL_StatusTypeDef hal_adc_status, hal_adc_pull_status;
-
-  hal_i2c_read_shift_bit_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_SHIFT_BIT,
-                                          REGISTER_SIZE, &read_buffer_shift_bit, BUFFER_SIZE_SHIFT_BIT, HAL_MAX_DELAY);
+  HAL_StatusTypeDef hal_change_shift_bit_status = change_shift_bit(&read_buffer_shift_bit, &write_buffer_shift_bit);
 
   while (1)
   {
@@ -150,15 +190,15 @@ int main(void)
     hal_i2c_read_distance2_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_DISTANCE2,
                                           REGISTER_SIZE, &read_buffer_distance2, BUFFER_SIZE_DISTANCE, 100);
 
-    if (hal_i2c_read_shift_bit_status == HAL_OK && hal_i2c_read_distance1_status == HAL_OK && hal_i2c_read_distance2_status == HAL_OK)
+    if (hal_change_shift_bit_status == HAL_OK && hal_i2c_read_distance1_status == HAL_OK && hal_i2c_read_distance2_status == HAL_OK)
     {
       distance_result = (read_buffer_distance1 * 16 + read_buffer_distance2) / 16 / 2 ^ read_buffer_shift_bit;
       printf("[I2C distance_result] %d cm\r\n", distance_result);
     }
     else
     {
-      printf("[Vout(A) distance_result] FAIL, shift_bit read status: %d, distance1 read status: %d, distance2 read status: %d\r\n",
-              hal_i2c_read_shift_bit_status, hal_i2c_read_distance1_status, hal_i2c_read_distance2_status);
+      printf("[Vout(A) distance_result] FAIL, shift_bit change status: %d, distance1 read status: %d, distance2 read status: %d\r\n",
+              hal_change_shift_bit_status, hal_i2c_read_distance1_status, hal_i2c_read_distance2_status);
     }
     printf("----------------------------------------\r\n");
 
