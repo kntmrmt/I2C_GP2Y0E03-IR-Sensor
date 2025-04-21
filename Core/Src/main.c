@@ -146,9 +146,9 @@ int main(void)
   {
     // Get distance value from distance register by I2C
     hal_i2c_read_distance1_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_DISTANCE1,
-                                          REGISTER_SIZE, &read_buffer_distance1, BUFFER_SIZE_DISTANCE, HAL_MAX_DELAY);
+                                          REGISTER_SIZE, &read_buffer_distance1, BUFFER_SIZE_DISTANCE, 100);
     hal_i2c_read_distance2_status = HAL_I2C_Mem_Read(&hi2c1, SLAVE_ADDRESS_GP2Y0E03, REGISTER_ADDRESS_GP2Y0E03_DISTANCE2,
-                                          REGISTER_SIZE, &read_buffer_distance2, BUFFER_SIZE_DISTANCE, HAL_MAX_DELAY);
+                                          REGISTER_SIZE, &read_buffer_distance2, BUFFER_SIZE_DISTANCE, 100);
 
     if (hal_i2c_read_shift_bit_status == HAL_OK && hal_i2c_read_distance1_status == HAL_OK && hal_i2c_read_distance2_status == HAL_OK)
     {
@@ -180,7 +180,7 @@ int main(void)
       printf("[Vout(A) ADC_VALUE] HAL_ADC_PollForConversion is FAIL, HAL status: %d\r\n", hal_adc_pull_status);
     }
     printf("========================================\r\n");
-    HAL_Delay(500);
+    HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
